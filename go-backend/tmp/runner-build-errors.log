@@ -1,2 +1,0 @@
-cmd\web\routes.go:7:2: no required module provides package github.com/gin-contrib/cors; to add it:
-	go get github.com/gin-contrib/cors

@@ -17,6 +17,7 @@ func routes(app *config.AppConfig) http.Handler {
 		ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		ctx.String(http.StatusOK, "Hello World from root path")
 	})
+
 	auth := mux.Group("/auth/")
 	{
 		auth.GET("/", func(ctx *gin.Context) {

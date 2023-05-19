@@ -1,26 +1,19 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import axios from "axios";
+import { useQuery } from "react-query";
 function App() {
 	const [text, setText] = useState<string>("");
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-
+	const { isLoading, error, data } = useQuery({
+		queryKey: ["repoData"],
+		queryFn: () => axios.get("http://localhost:8080/"),
+	});
 	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				let body = await axios.get("http://localhost:8080/");
-				console.log(body);
-				setText(body.data);
-			} catch (e) {
-				console.log(e);
-				throw e;
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchData();
-	}, []);
+		if (error) console.log(error);
+	}, [error]);
+	useEffect(() => {
+		if (!isLoading) setText(data?.data);
+	}, [isLoading]);
 	return (
 		<>
 			<div className="flex flex-row justify-center">Hallo</div>
