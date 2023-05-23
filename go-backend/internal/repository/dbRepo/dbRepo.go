@@ -9,10 +9,10 @@ import (
 
 type mongoDBRepo struct {
 	AppConfig *config.AppConfig
-	DB        *mongo.Database
+	DB        *mongo.Client
 }
 
-func NewMongoConnection(a *config.AppConfig, m *mongo.Database) repository.DatabaseRepo {
+func NewMongoConnection(a *config.AppConfig, m *mongo.Client) repository.DatabaseRepo {
 	return &mongoDBRepo{
 		AppConfig: a,
 		DB:        m,

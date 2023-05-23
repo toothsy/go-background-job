@@ -13,6 +13,7 @@ const (
 //QueueManager holds the DbRepo,workerPool and JobQueue,QueueConfig
 type QueueManager struct {
 	DatabaseRepo repository.DatabaseRepo
+	WorkerPool   WorkerPool
 }
 
 //Job defines what workers pass around to execute and load to db

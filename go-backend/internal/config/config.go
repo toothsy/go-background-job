@@ -9,6 +9,7 @@ type AppConfig struct {
 	InProduction bool
 	InfoLogger   *log.Logger
 	ErrorLogger  *log.Logger
+	MongoURI     string
 }
 
 type WorkerPoolConfig struct {
