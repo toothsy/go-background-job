@@ -7,6 +7,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+type MongoDB struct {
+}
+
 func TestDB(d *mongo.Client) error {
 	err := d.Ping(context.Background(), readpref.Primary())
 	if err != nil {

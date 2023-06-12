@@ -1,24 +1,16 @@
 package config
 
 import (
+	"github/toothsy/go-background-job/internal/models"
 	"log"
-	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AppConfig struct {
 	InProduction bool
 	InfoLogger   *log.Logger
 	ErrorLogger  *log.Logger
-	MongoURI     string
-}
-
-type WorkerPoolConfig struct {
-	MaxWorkers     int
-	MaxQueueSize   int
-	MaxRetries     int
-	RetryDelay     time.Duration
-	Timeout        time.Duration
-	MetricsTricker time.Duration
-	PruneInterval  time.Duration
-	PanicHandler   func(job interface{})
+	MonogoClient *mongo.Client
+	WorkerPool   *models.WorkerPool
 }
