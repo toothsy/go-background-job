@@ -18,6 +18,7 @@ func routes(app *config.AppConfig) http.Handler {
 	auth := mux.Group("/auth")
 	{
 		auth.POST("/login", handlers.Authenticate)
+		auth.POST("/signup", handlers.SignUp)
 
 	}
 	mux.POST("/upload/", handlers.UploadImage)

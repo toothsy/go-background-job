@@ -53,6 +53,7 @@ func Authenticate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "auth Job published to queue"})
 }
 
+// UploadImage used to upload image
 func UploadImage(c *gin.Context) {
 	FILE_SIZE := 200 * 1024 //limit of 200KB
 	c.Header("Content-Type", "application/json")
@@ -78,4 +79,10 @@ func UploadImage(c *gin.Context) {
 	}
 	Repo.App.WorkerPool.Enqueue(job)
 	c.JSON(http.StatusOK, gin.H{"message": "upload Job published to queue"})
+}
+
+func SignUp(c *gin.Context) {
+	// username := c.PostForm("username")
+	// passwordHash := c.PostForm("phash")
+
 }

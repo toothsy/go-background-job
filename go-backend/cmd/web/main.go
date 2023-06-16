@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"github/toothsy/go-background-job/internal/config"
+	"github/toothsy/go-background-job/internal/driver"
 	"github/toothsy/go-background-job/internal/handlers"
 	"github/toothsy/go-background-job/internal/models"
-	"io"
+	dbrepo "github/toothsy/go-background-job/internal/repository/dbRepo"
 	"log"
 	"net/http"
 	"os"
@@ -14,27 +13,24 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var app config.AppConfig
 var portNumber = ":8080"
+var mongoUri string
 
 func main() {
-	mongoClient, err := runner()
-	if err != nil {
-		app.ErrorLogger.Fatal(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
-	defer mongoClient.Disconnect(ctx)
+	cancel, err := runner()
 	defer cancel()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer driver.Disconnect(&app)
 
 	if err != nil {
-		app.ErrorLogger.Fatal(err)
+		log.Fatal(err)
 	}
-	fmt.Printf("Staring application on http://localhost%s", portNumber)
+	log.Printf("Staring application on http://localhost%s", portNumber)
 	srv := &http.Server{
 		Addr:    portNumber,
 		Handler: routes(&app),
@@ -46,15 +42,8 @@ func main() {
 	}
 }
 
-func runner() (*mongo.Client, error) {
+func runner() (func(), error) {
 	app.InProduction = false
-	if app.InProduction {
-		app.InfoLogger = log.New(io.Discard, "", 0)
-		app.ErrorLogger = log.New(io.Discard, "", 0)
-	} else {
-		app.InfoLogger = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-		app.ErrorLogger = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime)
-	}
 
 	WorkerConfig := &models.WorkerPoolConfig{
 		MaxWorkers:   2,
@@ -72,17 +61,22 @@ func runner() (*mongo.Client, error) {
 	app.WorkerPool.Run()
 	err := godotenv.Load("./secret.env")
 	if err != nil {
-		app.ErrorLogger.Fatal(err)
+		log.Fatal(err)
 		return nil, err
 	}
-	mongoUri := os.Getenv("MONGO_URI")
-	client, err := mongo.NewClient(options.Client().ApplyURI(mongoUri))
+	mongoUri = os.Getenv("MONGO_URI")
+	cancel, err := driver.ConnectMongoDB(&app, mongoUri)
 	if err != nil {
-		app.ErrorLogger.Fatal(err)
+		log.Fatal(err)
 		return nil, err
 	}
-	app.MonogoClient = client
+	// allowing handlers the access to appconfig
+
 	repo := handlers.NewRepo(&app)
+	// initiating a new repo instance, so that handler functions can use app config
 	handlers.NewHandlers(repo)
-	return client, nil
+
+	// allowing dbRepo the access to appconfig
+	dbrepo.NewMongoConnection(&app)
+	return cancel, nil
 }
