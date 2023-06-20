@@ -4,6 +4,7 @@ import (
 	"context"
 	"github/toothsy/go-background-job/internal/config"
 	"log"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,6 +14,7 @@ import (
 // connects to the mongo db instance, returns cancel function and error
 func ConnectMongoDB(app *config.AppConfig, mongoURI string) (func(), error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	dbname := os.Getenv("DBNAME")
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -26,7 +28,7 @@ func ConnectMongoDB(app *config.AppConfig, mongoURI string) (func(), error) {
 
 	}
 	log.Println("Ping to Mongo DB successful")
-	app.MonogoClient = client
+	app.MongoDatabase = client.Database(dbname)
 	return cancel, nil
 }
 
@@ -34,6 +36,6 @@ func ConnectMongoDB(app *config.AppConfig, mongoURI string) (func(), error) {
 func Disconnect(app *config.AppConfig) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	app.MonogoClient.Disconnect(ctx)
+	app.MongoClient.Disconnect(ctx)
 
 }

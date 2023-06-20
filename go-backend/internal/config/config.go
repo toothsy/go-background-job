@@ -7,7 +7,8 @@ import (
 )
 
 type AppConfig struct {
-	InProduction bool
-	MonogoClient *mongo.Client
-	WorkerPool   *models.WorkerPool
+	InProduction  bool
+	MongoDatabase *mongo.Database
+	MongoClient   *mongo.Client
+	WorkerPool    *models.WorkerPool
 }
