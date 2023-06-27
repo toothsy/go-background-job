@@ -23,6 +23,7 @@ func routes(app *config.AppConfig) http.Handler {
 		auth.GET("/verify", handlers.Verify)
 	}
 	mux.POST("/projects/upload/", handlers.UploadImage)
+	mux.GET("/projects/getImages", handlers.GetImages)
 
 	return mux
 }

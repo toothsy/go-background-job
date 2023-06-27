@@ -81,7 +81,7 @@ func runner() (func(), error) {
 	// initiating a new repo instance, so that handler functions can use app config
 	handlers.NewHandlers(repo)
 
-	app.WorkerPool.Init(&jobContextMap, repo.DB)
+	app.WorkerPool.Init(&jobContextMap, repo.DB, app.MongoDatabase)
 	// allowing dbRepo the access to appconfig
 	dbrepo.NewMongoConnection(&app)
 	return cancel, nil

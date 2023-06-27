@@ -9,6 +9,7 @@ import (
 	"github/toothsy/go-background-job/internal/repository"
 	dbrepo "github/toothsy/go-background-job/internal/repository/dbRepo"
 	"github/toothsy/go-background-job/internal/workerpool"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -91,7 +93,8 @@ func Authenticate(c *gin.Context) {
 func UploadImage(c *gin.Context) {
 	FILE_SIZE := 200 * 1024 //limit of 200KB
 	username := c.Request.FormValue("username")
-	u := &models.UserPayload{UserName: username}
+	eml := c.Request.FormValue("email")
+	u := &models.UserPayload{UserName: username, Email: eml}
 	imageFile, err := c.FormFile("image")
 
 	if err != nil {
@@ -99,13 +102,26 @@ func UploadImage(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	log.Println(imageFile.Filename, imageFile.Size)
 	if imageFile.Size > int64(FILE_SIZE) {
 		// Handle error
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "file size exceeds " + fmt.Sprintf("%d", FILE_SIZE/1000) + "KB limit"})
 		return
 	}
-	i := &models.ImagePayload{Image: imageFile, UserName: *u, CreatedAt: time.Now()}
+	// Read the contents of the file
+	fileContent, err := imageFile.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer fileContent.Close()
+	// Read the file content into a byte slice
+	fileBytes, err := io.ReadAll(fileContent)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// Specify the subtype of the binary data (default 0x00 for generic binary data)
+	i := &models.ImagePayload{Email: u.Email, Filename: imageFile.Filename, FileData: primitive.Binary{Subtype: 0x00, Data: fileBytes}, CreatedAt: time.Now()}
 	job := models.Job{
 		Id:      uuid.New().String(),
 		Status:  constants.Queued,
@@ -174,4 +190,15 @@ func Verify(c *gin.Context) {
 
 	}
 
+}
+
+func GetImages(c *gin.Context) {
+	eml := c.Query("email")
+	log.Println("endpoint reached", eml)
+	images, err := Repo.DB.SearchUserImage(eml)
+	if err != nil {
+		log.Println("error in getting images, ", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"images": images})
 }

@@ -2,6 +2,7 @@ package dbrepo
 
 import (
 	"context"
+	"encoding/json"
 	"github/toothsy/go-background-job/internal/models"
 	"log"
 	"time"
@@ -47,5 +48,37 @@ func (dbRepo *mongoDBRepo) UpdateUserVerification(user *models.UserPayload) {
 		log.Println("Did not update User, as user not found")
 	}
 	log.Println("Updated User :", result.MatchedCount)
+
+}
+
+func (dbRepo *mongoDBRepo) SearchUserImage(email string) ([]json.RawMessage, error) {
+	filter := bson.M{"email": email}
+
+	cursor, err := dbRepo.AppConfig.MongoDatabase.Collection("imageData").Find(context.Background(), filter)
+	if err != nil {
+		log.Println("email not found")
+		return nil, err
+	}
+	var jsonArray []json.RawMessage
+	for cursor.Next(context.Background()) {
+		var document bson.M
+		err := cursor.Decode(&document)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		jsonBytes, err := json.Marshal(document)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		jsonArray = append(jsonArray, json.RawMessage(jsonBytes))
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return jsonArray, nil
 
 }

@@ -2,8 +2,9 @@ package models
 
 import (
 	"fmt"
-	"mime/multipart"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Job defines what workers pass around to execute and load to db
@@ -36,9 +37,9 @@ func (u UserPayload) String() string {
 
 func (i ImagePayload) String() string {
 	return fmt.Sprintf(`
-	Name:%s
-	Image name:%s
-	Created at :%s`, i.UserName, i.Image.Filename, i.CreatedAt)
+	FileName:%s
+	Email:%s
+	Created at :%s`, i.Filename, i.Email, i.CreatedAt)
 }
 
 // used to hold the user data that will be inserted
@@ -52,7 +53,8 @@ type UserPayload struct {
 
 // used to hold the image data that will be inserted
 type ImagePayload struct {
-	UserName  UserPayload           `json:"userName"`
-	Image     *multipart.FileHeader `json:"image"`
-	CreatedAt time.Time             `json:"CreatedAt"`
+	Email     string
+	Filename  string
+	FileData  primitive.Binary
+	CreatedAt time.Time
 }

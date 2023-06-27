@@ -1,17 +1,20 @@
 package workerpool
 
 import (
+	"context"
 	"crypto/subtle"
 	"github/toothsy/go-background-job/internal/constants"
 	"github/toothsy/go-background-job/internal/models"
 	"github/toothsy/go-background-job/internal/repository"
 	"log"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -34,10 +37,12 @@ type WorkerPool struct {
 
 var JobContextMap *sync.Map
 var DB repository.DatabaseRepo
+var mongoDatbase *mongo.Database
 
-func (wp *WorkerPool) Init(contextMap *sync.Map, repo repository.DatabaseRepo) {
+func (wp *WorkerPool) Init(contextMap *sync.Map, repo repository.DatabaseRepo, mdb *mongo.Database) {
 	JobContextMap = contextMap
 	DB = repo
+	mongoDatbase = mdb
 }
 
 // Enqueue adds the gives job to pool
@@ -118,6 +123,21 @@ func handleAuth(dequedJob *models.Job) {
 }
 func handleUpload(dequedJob *models.Job) {
 	log.Println("got the upload job", dequedJob)
+	cInterafce, ok := JobContextMap.Load(dequedJob.Id)
+	if !ok {
+		log.Println("error in retrieving gin context ")
+	}
+	c, ok := cInterafce.(*gin.Context)
+	if !ok {
+		log.Println("error in casting gin context ")
+	}
+
+	_, err := mongoDatbase.Collection("imageData").InsertOne(context.Background(), dequedJob.Image)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 }
 
 func updateClient(dequedJobUuid string, updateType int, message gin.H) {
